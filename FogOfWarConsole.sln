@@ -5,6 +5,11 @@ VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FogOfWarConsole", "FogOfWarConsole.csproj", "{EA6E9D52-6657-465B-9618-D9F22A06F7CF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F3B02268-A308-4BD2-90BD-EB0F4E9B9FF9}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\Missions\Fighter_Sweep\Bf-109G205.mis = ..\..\Missions\Fighter_Sweep\Bf-109G205.mis
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
