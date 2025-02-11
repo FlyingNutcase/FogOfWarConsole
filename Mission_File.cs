@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace FogOfWarConsole
@@ -13,7 +10,6 @@ namespace FogOfWarConsole
     public class MissionFile
     {
         private Dictionary<string, List<string>> sections = new Dictionary<string, List<string>>();
-
         private string fowFilePath; // Path for the -fow.mis file
 
         public string Map { get; set; }
@@ -28,13 +24,14 @@ namespace FogOfWarConsole
         public int Gust { get; set; }
         public int Turbulence { get; set; }
 
+        // Add the Wings collection
+        public List<Wing> Wings { get; set; } = new List<Wing>();
+        private List<string> wingIdentifiers = new List<string>();
 
         public MissionFile(string filePath)
         {
             Load(filePath);
-
             fowFilePath = filePath.Substring(0, filePath.Length - 4) + "-fow.mis";
-
         }
 
         public void Load(string filePath)
@@ -66,7 +63,8 @@ namespace FogOfWarConsole
             ParseMainSection();
             ParseSeasonSection();
             ParseWeatherSection();
-
+            ParseWingIdentifiers();
+            ParseWings();
         }
 
         private void ParseMainSection()
@@ -163,6 +161,134 @@ namespace FogOfWarConsole
             }
         }
 
+        private void ParseWingIdentifiers()
+        {
+            if (sections.ContainsKey("Wing"))
+            {
+                foreach (string line in sections["Wing"])
+                {
+                    wingIdentifiers.Add(line.Trim());
+                }
+            }
+        }
+
+        private void ParseWings()
+        {
+            foreach (var wingIdentifier in wingIdentifiers)
+            {
+                if (sections.ContainsKey(wingIdentifier))
+                {
+                    Wing wing = new Wing { Name = wingIdentifier };
+                    foreach (string line in sections[wingIdentifier])
+                    {
+                        string[] parts = line.Split(new[] { ' ' }, 2);
+                        if (parts.Length == 2)
+                        {
+                            string key = parts[0].Trim();
+                            string value = parts[1].Trim();
+
+                            switch (key)
+                            {
+                                case "Planes":
+                                    wing.Planes = int.Parse(value);
+                                    break;
+                                case "Skill":
+                                    wing.Skill0 = wing.Skill1 = wing.Skill2 = wing.Skill3 = int.Parse(value);
+                                    break;
+                                case "Skill0":
+                                    wing.Skill0 = int.Parse(value);
+                                    break;
+                                case "Skill1":
+                                    wing.Skill1 = int.Parse(value);
+                                    break;
+                                case "Skill2":
+                                    wing.Skill2 = int.Parse(value);
+                                    break;
+                                case "Skill3":
+                                    wing.Skill3 = int.Parse(value);
+                                    break;
+                                case "skin0":
+                                    wing.Skin0 = value;
+                                    break;
+                                case "skin1":
+                                    wing.Skin1 = value;
+                                    break;
+                                case "skin2":
+                                    wing.Skin2 = value;
+                                    break;
+                                case "skin3":
+                                    wing.Skin3 = value;
+                                    break;
+                                case "pilot0":
+                                    wing.Pilot0 = value;
+                                    break;
+                                case "pilot1":
+                                    wing.Pilot1 = value;
+                                    break;
+                                case "pilot2":
+                                    wing.Pilot2 = value;
+                                    break;
+                                case "pilot3":
+                                    wing.Pilot3 = value;
+                                    break;
+                                case "numberOn0":
+                                    wing.NumberOn0 = int.Parse(value);
+                                    break;
+                                case "numberOn1":
+                                    wing.NumberOn1 = int.Parse(value);
+                                    break;
+                                case "numberOn2":
+                                    wing.NumberOn2 = int.Parse(value);
+                                    break;
+                                case "numberOn3":
+                                    wing.NumberOn3 = int.Parse(value);
+                                    break;
+                                case "Class":
+                                    wing.Class = value;
+                                    break;
+                                case "Fuel":
+                                    wing.Fuel = int.Parse(value);
+                                    break;
+                                case "weapons":
+                                    wing.Weapons = value;
+                                    break;
+                                case "StartTime":
+                                    wing.StartTime = int.Parse(value);
+                                    break;
+                            }
+                        }
+                    }
+                    Wings.Add(wing);
+                }
+
+                if (sections.ContainsKey(wingIdentifier + "_Way"))
+                {
+                    Wing wing = Wings.FirstOrDefault(w => w.Name == wingIdentifier);
+                    if (wing != null)
+                    {
+                        foreach (string line in sections[wingIdentifier + "_Way"])
+                        {
+                            string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length >= 5)
+                            {
+                                Waypoint waypoint = new Waypoint
+                                {
+                                    Wing = wing, // Set the Wing reference
+                                    Type = parts[0],
+                                    X = ParseDouble(parts[1]),
+                                    Y = ParseDouble(parts[2]),
+                                    Altitude = ParseDouble(parts[3]),
+                                    Speed = ParseDouble(parts[4]),
+                                    Target = parts.Length > 5 ? string.Join(" ", parts.Skip(5)) : null
+                                };
+                                wing.Waypoints.Add(waypoint);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         //Helper to parse doubles accounting for different culture settings
         private double ParseDouble(string value)
         {
@@ -177,7 +303,6 @@ namespace FogOfWarConsole
             }
         }
 
-
         // Example of accessing and modifying data (you'll need to implement more of these)
         public List<string> GetWaypoints(string wingName)
         {
@@ -186,13 +311,6 @@ namespace FogOfWarConsole
                 return sections[wingName + "_Way"];
             }
             return new List<string>();
-        }
-
-        public void SetTime(double newTime)
-        {
-            Time = newTime;
-            // You'll need to update the "MAIN" section string in the sections dictionary
-            // to reflect this change if you intend to save the file later.
         }
 
         public void Save()
@@ -211,8 +329,6 @@ namespace FogOfWarConsole
                 }
             }
 
-
-
             using (StreamWriter writer = new StreamWriter(fowFilePath))
             {
                 foreach (var section in sections)
@@ -225,7 +341,43 @@ namespace FogOfWarConsole
                 }
             }
         }
+    }
 
-        // ... Add more methods to access and modify other sections (Wings, Static objects, Buildings, etc.)
+    public class Wing
+    {
+        public string Name { get; set; }
+        public int Planes { get; set; }
+        public int Skill0 { get; set; }
+        public int Skill1 { get; set; }
+        public int Skill2 { get; set; }
+        public int Skill3 { get; set; }
+        public string Skin0 { get; set; }
+        public string Skin1 { get; set; }
+        public string Skin2 { get; set; }
+        public string Skin3 { get; set; }
+        public string Pilot0 { get; set; }
+        public string Pilot1 { get; set; }
+        public string Pilot2 { get; set; }
+        public string Pilot3 { get; set; }
+        public int NumberOn0 { get; set; }
+        public int NumberOn1 { get; set; }
+        public int NumberOn2 { get; set; }
+        public int NumberOn3 { get; set; }
+        public string Class { get; set; }
+        public int Fuel { get; set; }
+        public string Weapons { get; set; }
+        public int StartTime { get; set; }
+        public List<Waypoint> Waypoints { get; set; } = new List<Waypoint>();
+    }
+
+    public class Waypoint
+    {
+        public Wing Wing { get; set; }
+        public string Type { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Altitude { get; set; }
+        public double Speed { get; set; }
+        public string Target { get; set; }
     }
 }

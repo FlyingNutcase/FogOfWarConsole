@@ -20,7 +20,9 @@ namespace FogOfWarConsole
             string filePath = "C:\\_My\\CODE\\Missions\\Fighter_Sweep\\Bf-109G205.mis";
 
             //  Parse the file into a MissionFile object
-            MissionFile mission = new MissionFile(filePath); 
+            MissionFile mission = new MissionFile(filePath);
+
+            Console.WriteLine($"Alt of Wings[0] Waypoint 1 is: {mission.Wings[0].Waypoints[1].Altitude}");
 
             // Display existing properties of interest
             Console.WriteLine($"Cloud Type: {mission.CloudType}");
@@ -39,6 +41,15 @@ namespace FogOfWarConsole
             Console.WriteLine($"Cloud Type: {mission.CloudType}");
             Console.WriteLine($"Cloud Height: {mission.CloudHeight}");
             mission.Save();
+
+            ////
+            ////  Routes Plotter
+            ////
+            //Console.WriteLine("Drawing routes as supplied in routes.txt");
+            //string routesFilePath = "C:\\_My\\CODE\\routes.txt";
+            //string routesImageFilePath = "C:\\_My\\CODE\\path_image.bmp";
+            //FlightRoutePlotter.GenerateFlightPathImage(routesFilePath, routesImageFilePath);
+            //Console.WriteLine("Check flights_image.bmp for the generated image.");
 
             Console.ReadKey();
         }
